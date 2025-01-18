@@ -8,8 +8,9 @@ const Register = () => {
     email: "",
     password: "",
   });
-
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [err, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
 
@@ -17,18 +18,33 @@ const Register = () => {
     setInputs((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const validateInputs = () => {
+    if (!inputs.username.trim()) return "Username is required.";
+    if (!inputs.email.trim() || !/\S+@\S+\.\S+/.test(inputs.email))
+      return "A valid email is required.";
+    if (inputs.password.length < 6)
+      return "Password must be at least 6 characters long.";
+    if (inputs.password !== confirmPassword) return "Passwords do not match.";
+    return null;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const validationError = validateInputs();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      // Make an API call to your backend
-      const res = await axios.post(
-        "http://localhost:8800/auth/register",
-        inputs
-      );
-      console.log("Registration successful:", res.data);
-      navigate("/login"); // Redirect to the login page on success
+      const res = await axios.post("/auth/register", inputs);
+      setIsLoading(false);
+      setInputs({ username: "", email: "", password: "" });
+      setConfirmPassword("");
+      navigate("/login");
     } catch (error) {
-      console.error("Registration failed:", error);
+      setIsLoading(false);
       setError(
         error.response?.data?.message || "Failed to register, please try again."
       );
@@ -38,83 +54,61 @@ const Register = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#bce8ef] p-4">
       <div className="w-full max-w-4xl flex flex-col lg:flex-row bg-white rounded-xl shadow-lg">
-        {/* Left side with image */}
-        <div
-          className="
-         lg:block lg:w-1/2 flex items-center justify-center rounded-t-xl lg:rounded-l-xl lg:rounded-tr-none overflow-hidden"
-        >
+        <div className="lg:w-1/2 flex items-center justify-center overflow-hidden rounded-t-xl lg:rounded-l-xl">
           <img
             src="/1.png"
             alt="Registration Illustration"
             className="w-full h-full object-cover"
           />
         </div>
-
-        {/* Right side with register form */}
         <div className="w-full lg:w-1/2 p-6 sm:p-8 lg:p-10">
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#cbbce2] text-center mb-3 sm:mb-4">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#cbbce2] text-center mb-4">
             Create Account
           </h1>
-          <p className="text-[#cbbce2] text-sm sm:text-base text-center mb-6 sm:mb-8">
-            Sign up to get started
-          </p>
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-            <div>
-              <input
-                type="text"
-                placeholder="Username"
-                name="username"
-                value={inputs.username}
-                onChange={handleChange}
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-[#cbbce2] rounded-md focus:outline-none focus:ring-2 focus:ring-[#cbbce2] text-sm sm:text-base"
-              />
-            </div>
-            <div>
-              <input
-                type="email"
-                placeholder="E-mail"
-                name="email"
-                value={inputs.email}
-                onChange={handleChange}
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-[#cbbce2] rounded-md focus:outline-none focus:ring-2 focus:ring-[#cbbce2] text-sm sm:text-base"
-              />
-            </div>
-            <div>
-              <input
-                type="password"
-                placeholder="Password"
-                name="password"
-                value={inputs.password}
-                onChange={handleChange}
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-[#cbbce2] rounded-md focus:outline-none focus:ring-2 focus:ring-[#cbbce2] text-sm sm:text-base"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <label className="flex items-center text-[#cbbce2]">
-                <input
-                  type="checkbox"
-                  className="form-checkbox text-[#cbbce2] h-4 w-4"
-                />
-                <span className="ml-2 text-[#cbbce2] text-xs sm:text-sm">
-                  I agree to the terms and conditions
-                </span>
-              </label>
-            </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <input
+              type="text"
+              placeholder="Username"
+              name="username"
+              value={inputs.username}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-[#cbbce2] rounded-md focus:outline-none"
+            />
+            <input
+              type="email"
+              placeholder="E-mail"
+              name="email"
+              value={inputs.email}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-[#cbbce2] rounded-md focus:outline-none"
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              name="password"
+              value={inputs.password}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-[#cbbce2] rounded-md focus:outline-none"
+            />
+            <input
+              type="password"
+              placeholder="Confirm Password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full px-3 py-2 border border-[#cbbce2] rounded-md focus:outline-none"
+            />
             <button
               type="submit"
-              className="w-full bg-[#cbbce2] text-white py-2 sm:py-3 rounded-md hover:bg-[#bce8ef] transition duration-300 text-sm sm:text-base"
+              disabled={isLoading}
+              className="w-full bg-[#cbbce2] text-white py-2 rounded-md hover:bg-[#bce8ef] transition duration-300"
             >
-              Register
+              {isLoading ? "Registering..." : "Register"}
             </button>
-            {err && (
-              <p className="text-red-500 text-center text-xs sm:text-sm mt-2">
-                {err}
-              </p>
-            )}
+            {err && <p className="text-red-500 text-center mt-2">{err}</p>}
           </form>
-          <p className="text-center text-[#cbbce2] text-xs sm:text-sm mt-4">
+          <p className="text-center mt-4">
             Already have an account?{" "}
-            <Link to="/login" className="text-[#cbbce2] hover:underline">
+            <Link to="/login" className="hover:underline">
               Login
             </Link>
           </p>
